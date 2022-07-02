@@ -332,6 +332,29 @@ struct IRCDMessageBMask : IRCDMessage
 	}
 };
 
+struct IRCDMessageCapab : Message::Capab
+{
+	IRCDMessageCapab(Module *creator) : Message::Capab(creator, "CAPAB") { SetFlag(IRCDMESSAGE_SOFT_LIMIT); }
+
+	void Run(MessageSource &source, const std::vector<Anope::string> &params) anope_override
+	{
+		spacesepstream sep(params[0]);
+		Anope::string capab;
+
+		while (sep.GetToken(capab))
+		{
+			if (capab.find("HOP") != Anope::string::npos || capab.find("RHOST") != Anope::string::npos)
+				ModeManager::AddChannelMode(new ChannelModeStatus("HALFOP", 'h', '%', 1));
+			if (capab.find("AOP") != Anope::string::npos)
+				ModeManager::AddChannelMode(new ChannelModeStatus("PROTECT", 'a', '&', 3));
+			if (capab.find("QOP") != Anope::string::npos)
+				ModeManager::AddChannelMode(new ChannelModeStatus("OWNER", 'q', '~', 4));
+		}
+
+		Message::Capab::Run(source, params);
+	}
+};
+
 struct IRCDMessageEOB : IRCDMessage
 {
 	IRCDMessageEOB(Module *creator) : IRCDMessage(creator, "EOB", 0) { SetFlag(IRCDMESSAGE_REQUIRE_SERVER); }
@@ -586,7 +609,6 @@ class ProtoHybrid : public Module
 
 	/* Core message handlers */
 	Message::Away message_away;
-	Message::Capab message_capab;
 	Message::Error message_error;
 	Message::Invite message_invite;
 	Message::Kick message_kick;
@@ -607,6 +629,7 @@ class ProtoHybrid : public Module
 
 	/* Our message handlers */
 	IRCDMessageBMask message_bmask;
+	IRCDMessageCapab message_capab;
 	IRCDMessageEOB message_eob;
 	IRCDMessageJoin message_join;
 	IRCDMessageNick message_nick;
@@ -646,9 +669,8 @@ class ProtoHybrid : public Module
 		ModeManager::AddChannelMode(new ChannelModeList("EXCEPT", 'e'));
 		ModeManager::AddChannelMode(new ChannelModeList("INVITEOVERRIDE", 'I'));
 
-		/* v/h/o */
+		/* v/o */
 		ModeManager::AddChannelMode(new ChannelModeStatus("VOICE", 'v', '+', 0));
-		ModeManager::AddChannelMode(new ChannelModeStatus("HALFOP", 'h', '%', 1));
 		ModeManager::AddChannelMode(new ChannelModeStatus("OP", 'o', '@', 2));
 
 		/* l/k */
@@ -678,11 +700,11 @@ class ProtoHybrid : public Module
  public:
 	ProtoHybrid(const Anope::string &modname, const Anope::string &creator) : Module(modname, creator, PROTOCOL | VENDOR),
 		ircd_proto(this),
-		message_away(this), message_capab(this), message_error(this), message_invite(this), message_kick(this),
+		message_away(this), message_error(this), message_invite(this), message_kick(this),
 		message_kill(this), message_mode(this), message_motd(this), message_notice(this), message_part(this),
 		message_ping(this), message_privmsg(this), message_quit(this), message_squit(this), message_stats(this),
 		message_time(this), message_topic(this), message_version(this), message_whois(this),
-		message_bmask(this), message_eob(this), message_join(this),
+		message_bmask(this), message_capab(this), message_eob(this), message_join(this),
 		message_nick(this), message_pass(this), message_pong(this), message_server(this), message_sid(this),
 		message_sjoin(this), message_svsmode(this), message_tburst(this), message_tmode(this), message_uid(this),
 		message_certfp(this)
