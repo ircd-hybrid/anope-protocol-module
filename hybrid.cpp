@@ -101,20 +101,32 @@ class HybridProto : public IRCDProto
 
 	void SendJoin(User *u, Channel *c, const ChannelStatus *status) anope_override
 	{
-		/*
-		 * Note that we must send our modes with the SJOIN and can not add them to the
-		 * mode stacker because ircd-hybrid does not allow *any* client to op itself
-		 */
-		UplinkSocket::Message(Me) << "SJOIN " << c->creation_time << " " << c->name << " +" << c->GetModes(true, true) << " :"
-					  << (status != NULL ? status->BuildModePrefixList() : "") << u->GetUID();
+		UplinkSocket::Message(Me) << "SJOIN " << c->creation_time << " " << c->name << " +" << c->GetModes(true, true) << " :" << u->GetUID();
 
-		/* And update our internal status for this user since this is not going through our mode handling system */
+		/*
+		 * Note that we can send this with the SJOIN but choose not to
+		 * because the mode stacker will handle this and probably will
+		 * merge these modes with +nrt and other mlocked modes.
+		 */
 		if (status)
 		{
+			/* First save the channel status in case uc->status == status */
+			ChannelStatus cs = *status;
+
+			/*
+			 * If the user is internally on the channel with flags, kill them so that
+			 * the stacker will allow this.
+			 */
 			ChanUserContainer *uc = c->FindUser(u);
+			if (uc)
+				uc->status.Clear();
+
+			BotInfo *setter = BotInfo::Find(u->GetUID());
+			for (size_t i = 0; i < cs.Modes().length(); ++i)
+				c->SetMode(setter, ModeManager::FindChannelModeByChar(cs.Modes()[i]), u->GetUID(), false);
 
 			if (uc)
-				uc->status = *status;
+				uc->status = cs;
 		}
 	}
 
