@@ -422,9 +422,9 @@ struct IRCDMessageServer : IRCDMessage
 
 struct IRCDMessageSID : IRCDMessage
 {
-	IRCDMessageSID(Module *creator) : IRCDMessage(creator, "SID", 4) { SetFlag(IRCDMESSAGE_REQUIRE_SERVER); SetFlag(IRCDMESSAGE_SOFT_LIMIT); }
+	IRCDMessageSID(Module *creator) : IRCDMessage(creator, "SID", 5) { SetFlag(IRCDMESSAGE_REQUIRE_SERVER); SetFlag(IRCDMESSAGE_SOFT_LIMIT); }
 
-	/*          0          1 2   3  4                       */
+	/*          0          1 2   3 4                        */
 	/* :0MC SID hades.arpa 2 4XY + :ircd-hybrid test server */
 	void Run(MessageSource &source, const std::vector<Anope::string> &params) anope_override
 	{
