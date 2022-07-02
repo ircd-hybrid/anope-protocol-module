@@ -354,7 +354,7 @@ struct IRCDMessageJoin : Message::Join
 		std::vector<Anope::string> p = params;
 		p.erase(p.begin());
 
-		return Message::Join::Run(source, p);
+		Message::Join::Run(source, p);
 	}
 };
 
