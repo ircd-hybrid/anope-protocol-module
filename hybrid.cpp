@@ -10,6 +10,7 @@
  */
 
 #include "module.h"
+#include "modules/cs_mode.h"
 
 static Anope::string UplinkSID;
 static bool UseSVSAccount = false;  // Temporary backwards compatibility hack until old proto is deprecated
@@ -175,8 +176,9 @@ class HybridProto : public IRCDProto
 		 * ENCAP  - Supports ENCAP
 		 * EOB    - Supports End Of Burst message
 		 * RHOST  - Supports UID message with realhost information
+		 * MLOCK  - Supports MLOCK
 		 */
-		UplinkSocket::Message() << "CAPAB :ENCAP TBURST EOB RHOST";
+		UplinkSocket::Message() << "CAPAB :ENCAP TBURST EOB RHOST MLOCK";
 
 		SendServer(Me);
 
@@ -378,6 +380,31 @@ struct IRCDMessageJoin : Message::Join
 		p.erase(p.begin());
 
 		Message::Join::Run(source, p);
+	}
+};
+
+struct IRCDMessageMLock : IRCDMessage
+{
+	IRCDMessageMLock(Module *creator) : IRCDMessage(creator, "MLOCK", 4) { SetFlag(IRCDMESSAGE_REQUIRE_SERVER); }
+
+	/*            0          1        2          3   */
+	/* :0MC MLOCK 1350157102 #channel 1350158923 :nt */
+	void Run(MessageSource &source, const std::vector<Anope::string> &params) anope_override
+	{
+		Channel *c = Channel::Find(params[1]);
+
+		if (c && c->ci)
+		{
+			ModeLocks *modelocks = c->ci->GetExt<ModeLocks>("modelocks");
+			Anope::string modes;
+
+			if (modelocks)
+				modes = modelocks->GetMLockAsString(false).replace_all_cs("+", "").replace_all_cs("-", "");
+
+			// Mode lock string is not what we say it is?
+			if (modes != params[3])
+				UplinkSocket::Message(Me) << "MLOCK " << c->creation_time << " " << c->name << " " << Anope::CurTime << " :" << modes;
+		}
 	}
 };
 
@@ -632,6 +659,7 @@ class ProtoHybrid : public Module
 	IRCDMessageCapab message_capab;
 	IRCDMessageEOB message_eob;
 	IRCDMessageJoin message_join;
+	IRCDMessageMLock message_mlock;
 	IRCDMessageNick message_nick;
 	IRCDMessagePass message_pass;
 	IRCDMessagePong message_pong;
@@ -643,6 +671,8 @@ class ProtoHybrid : public Module
 	IRCDMessageTMode message_tmode;
 	IRCDMessageUID message_uid;
 	IRCDMessageCertFP message_certfp;
+
+	bool use_server_side_mlock;
 
 	void AddModes()
 	{
@@ -704,7 +734,7 @@ class ProtoHybrid : public Module
 		message_kill(this), message_mode(this), message_motd(this), message_notice(this), message_part(this),
 		message_ping(this), message_privmsg(this), message_quit(this), message_squit(this), message_stats(this),
 		message_time(this), message_topic(this), message_version(this), message_whois(this),
-		message_bmask(this), message_capab(this), message_eob(this), message_join(this),
+		message_bmask(this), message_capab(this), message_eob(this), message_join(this), message_mlock(this),
 		message_nick(this), message_pass(this), message_pong(this), message_server(this), message_sid(this),
 		message_sjoin(this), message_svsmode(this), message_tburst(this), message_tmode(this), message_uid(this),
 		message_certfp(this)
@@ -716,6 +746,56 @@ class ProtoHybrid : public Module
 	void OnUserNickChange(User *u, const Anope::string &) anope_override
 	{
 		u->RemoveModeInternal(Me, ModeManager::FindUserModeByName("REGISTERED"));
+	}
+
+	void OnReload(Configuration::Conf *conf) anope_override
+	{
+		use_server_side_mlock = conf->GetModule(this)->Get<bool>("use_server_side_mlock");
+	}
+
+	void OnChannelSync(Channel *c) anope_override
+	{
+		if (!c->ci)
+			return;
+
+		ModeLocks *modelocks = c->ci->GetExt<ModeLocks>("modelocks");
+		if (use_server_side_mlock && modelocks && Servers::Capab.count("MLOCK"))
+		{
+			Anope::string modes = modelocks->GetMLockAsString(false).replace_all_cs("+", "").replace_all_cs("-", "");
+			UplinkSocket::Message(Me) << "MLOCK " << c->creation_time << " " << c->ci->name << " " << Anope::CurTime << " :" << modes;
+		}
+	}
+
+	void OnDelChan(ChannelInfo *ci) anope_override
+	{
+		if (use_server_side_mlock && ci->c && Servers::Capab.count("MLOCK"))
+			UplinkSocket::Message(Me) << "MLOCK " << ci->c->creation_time << " " << ci->name << " " << Anope::CurTime << " :";
+	}
+
+	EventReturn OnMLock(ChannelInfo *ci, ModeLock *lock) anope_override
+	{
+		ModeLocks *modelocks = ci->GetExt<ModeLocks>("modelocks");
+		ChannelMode *cm = ModeManager::FindChannelModeByName(lock->name);
+		if (use_server_side_mlock && cm && ci->c && modelocks && (cm->type == MODE_REGULAR || cm->type == MODE_PARAM) && Servers::Capab.count("MLOCK"))
+		{
+			Anope::string modes = modelocks->GetMLockAsString(false).replace_all_cs("+", "").replace_all_cs("-", "") + cm->mchar;
+			UplinkSocket::Message(Me) << "MLOCK " << ci->c->creation_time << " " << ci->name << " " << Anope::CurTime << " :" << modes;
+		}
+
+		return EVENT_CONTINUE;
+	}
+
+	EventReturn OnUnMLock(ChannelInfo *ci, ModeLock *lock) anope_override
+	{
+		ModeLocks *modelocks = ci->GetExt<ModeLocks>("modelocks");
+		ChannelMode *cm = ModeManager::FindChannelModeByName(lock->name);
+		if (use_server_side_mlock && cm && modelocks && ci->c && (cm->type == MODE_REGULAR || cm->type == MODE_PARAM) && Servers::Capab.count("MLOCK"))
+		{
+			Anope::string modes = modelocks->GetMLockAsString(false).replace_all_cs("+", "").replace_all_cs("-", "").replace_all_cs(cm->mchar, "");
+			UplinkSocket::Message(Me) << "MLOCK " << ci->c->creation_time << " " << ci->name << " " << Anope::CurTime << " :" << modes;
+		}
+
+		return EVENT_CONTINUE;
 	}
 };
 
