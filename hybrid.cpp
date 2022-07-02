@@ -1,7 +1,7 @@
 /* ircd-hybrid protocol module. Minimum supported version of ircd-hybrid is 8.2.23.
  *
  * (C) 2003-2022 Anope Team <team@anope.org>
- * (C) 2012-2020 ircd-hybrid development team
+ * (C) 2012-2022 ircd-hybrid development team
  *
  * Please read COPYING and README for further details.
  *
@@ -22,7 +22,7 @@ class HybridProto : public IRCDProto
 		u->KillInternal(source, buf);
 	}
 
-  public:
+ public:
 	HybridProto(Module *creator) : IRCDProto(creator, "ircd-hybrid 8.2.23+")
 	{
 		DefaultPseudoclientModes = "+oi";
@@ -171,9 +171,6 @@ class HybridProto : public IRCDProto
 		UplinkSocket::Message() << "PASS " << Config->Uplinks[Anope::CurrentUplink].password;
 
 		/*
-		 * As of October 02, 2020, ircd-hybrid-8 does support the following capabilities
-		 * which are required to work with IRC-services:
-		 *
 		 * TBURST - Supports topic burst
 		 * ENCAP  - Supports ENCAP
 		 * EOB    - Supports End Of Burst message
@@ -317,7 +314,7 @@ struct IRCDMessageBMask : IRCDMessage
 {
 	IRCDMessageBMask(Module *creator) : IRCDMessage(creator, "BMASK", 4) { SetFlag(IRCDMESSAGE_REQUIRE_SERVER); }
 
-	/*            0          1        2  3              */
+	/*            0          1        2 3               */
 	/* :0MC BMASK 1350157102 #channel b :*!*@*.test.com */
 	void Run(MessageSource &source, const std::vector<Anope::string> &params) anope_override
 	{
@@ -400,7 +397,7 @@ struct IRCDMessageServer : IRCDMessage
 {
 	IRCDMessageServer(Module *creator) : IRCDMessage(creator, "SERVER", 3) { SetFlag(IRCDMESSAGE_REQUIRE_SERVER); SetFlag(IRCDMESSAGE_SOFT_LIMIT); }
 
-	/*        0          1 2   3  4                       */
+	/*        0          1 2   3 4                        */
 	/* SERVER hades.arpa 1 4XY + :ircd-hybrid test server */
 	void Run(MessageSource &source, const std::vector<Anope::string> &params) anope_override
 	{
@@ -509,6 +506,8 @@ struct IRCDMessageTBurst : IRCDMessage
 {
 	IRCDMessageTBurst(Module *creator) : IRCDMessage(creator, "TBURST", 5) { }
 
+	/*             0          1       2          3                      4                      */
+	/* :0MC TBURST 1654867975 #nether 1654877335 Steve!~steve@the.mines :Join the ghast nation */
 	void Run(MessageSource &source, const std::vector<Anope::string> &params) anope_override
 	{
 		Anope::string setter;
@@ -676,7 +675,7 @@ class ProtoHybrid : public Module
 		ModeManager::AddChannelMode(new ChannelMode("NONOTICE", 'T'));
 	}
 
-public:
+ public:
 	ProtoHybrid(const Anope::string &modname, const Anope::string &creator) : Module(modname, creator, PROTOCOL | VENDOR),
 		ircd_proto(this),
 		message_away(this), message_capab(this), message_error(this), message_invite(this), message_kick(this),
