@@ -668,6 +668,7 @@ class ProtoHybrid : public Module
 		ModeManager::AddChannelMode(new ChannelMode("NOKNOCK", 'K'));
 		ModeManager::AddChannelMode(new ChannelModeOperOnly("LBAN", 'L'));
 		ModeManager::AddChannelMode(new ChannelMode("REGMODERATED", 'M'));
+		ModeManager::AddChannelMode(new ChannelMode("NONICK", 'N'));
 		ModeManager::AddChannelMode(new ChannelModeOperOnly("OPERONLY", 'O'));
 		ModeManager::AddChannelMode(new ChannelMode("REGISTEREDONLY", 'R'));
 		ModeManager::AddChannelMode(new ChannelMode("SSL", 'S'));
