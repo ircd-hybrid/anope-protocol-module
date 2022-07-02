@@ -437,15 +437,16 @@ struct IRCDMessageSID : IRCDMessage
 
 struct IRCDMessageSJoin : IRCDMessage
 {
-	IRCDMessageSJoin(Module *creator) : IRCDMessage(creator, "SJOIN", 2) { SetFlag(IRCDMESSAGE_REQUIRE_SERVER); SetFlag(IRCDMESSAGE_SOFT_LIMIT); }
+	IRCDMessageSJoin(Module *creator) : IRCDMessage(creator, "SJOIN", 4) { SetFlag(IRCDMESSAGE_REQUIRE_SERVER); SetFlag(IRCDMESSAGE_SOFT_LIMIT); }
 
+	/*            0          1       2   3                      */
+	/* :0MC SJOIN 1654877335 #nether +nt :@0MCAAAAAB +0MCAAAAAC */
 	void Run(MessageSource &source, const std::vector<Anope::string> &params) anope_override
 	{
 		Anope::string modes;
 
-		if (params.size() >= 3)
-			for (unsigned i = 2; i < params.size() - 1; ++i)
-				modes += " " + params[i];
+		for (unsigned i = 2; i < params.size() - 1; ++i)
+			modes += " " + params[i];
 
 		if (!modes.empty())
 			modes.erase(modes.begin());
