@@ -221,11 +221,7 @@ class HybridProto : public IRCDProto
 
 	void SendChannel(Channel *c) anope_override
 	{
-		Anope::string modes = c->GetModes(true, true);
-
-		if (modes.empty())
-			modes = "+";
-
+		Anope::string modes = "+" + c->GetModes(true, true);
 		UplinkSocket::Message(Me) << "SJOIN " << c->creation_time << " " << c->name << " " << modes << " :";
 	}
 
