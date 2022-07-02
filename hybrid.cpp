@@ -547,14 +547,14 @@ struct IRCDMessageTMode : IRCDMessage
 
 struct IRCDMessageUID : IRCDMessage
 {
-	IRCDMessageUID(Module *creator) : IRCDMessage(creator, "UID", 10) { SetFlag(IRCDMESSAGE_REQUIRE_SERVER); SetFlag(IRCDMESSAGE_SOFT_LIMIT); }
+	IRCDMessageUID(Module *creator) : IRCDMessage(creator, "UID", 11) { SetFlag(IRCDMESSAGE_REQUIRE_SERVER); SetFlag(IRCDMESSAGE_SOFT_LIMIT); }
 
+	/*          0     1 2          3   4      5            6         7        8         9     10                   */
+	/* :0MC UID Steve 1 1350157102 +oi ~steve virtual.host real.host 10.0.0.1 0MCAAAAAB Steve :Mining all the time */
 	void Run(MessageSource &source, const std::vector<Anope::string> &params) anope_override
 	{
 		NickAlias *na = NULL;
 
-		/*          0     1 2          3   4      5            6         7        8         9      10                  */
-		/* :0MC UID Steve 1 1350157102 +oi ~steve virtual.host real.host 10.0.0.1 0MCAAAAAB Steve :Mining all the time */
 		if (params[9] != "*")
 			na = NickAlias::Find(params[9]);
 
