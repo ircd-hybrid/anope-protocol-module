@@ -346,6 +346,8 @@ struct IRCDMessageCapab : Message::Capab
 {
 	IRCDMessageCapab(Module *creator) : Message::Capab(creator, "CAPAB") { SetFlag(IRCDMESSAGE_SOFT_LIMIT); }
 
+	/*       0                 */
+	/* CAPAB :TBURST EOB MLOCK */
 	void Run(MessageSource &source, const std::vector<Anope::string> &params) anope_override
 	{
 		spacesepstream sep(params[0]);
@@ -541,11 +543,8 @@ struct IRCDMessageSVSMode : IRCDMessage
 {
 	IRCDMessageSVSMode(Module *creator) : IRCDMessage(creator, "SVSMODE", 3) { SetFlag(IRCDMESSAGE_SOFT_LIMIT); }
 
-	/*
-	 * parv[0] = nickname
-	 * parv[1] = TS
-	 * parv[2] = mode
-	 */
+	/*              0         1          2  */
+	/* :0MC SVSMODE 0MCAAAAAB 1350157102 +r */
 	void Run(MessageSource &source, const std::vector<Anope::string> &params) anope_override
 	{
 		User *u = User::Find(params[0]);
@@ -582,6 +581,8 @@ struct IRCDMessageTMode : IRCDMessage
 {
 	IRCDMessageTMode(Module *creator) : IRCDMessage(creator, "TMODE", 3) { SetFlag(IRCDMESSAGE_SOFT_LIMIT); }
 
+	/*            0          1       2    */
+	/* :0MC TMODE 1654867975 #nether +ntR */
 	void Run(MessageSource &source, const std::vector<Anope::string> &params) anope_override
 	{
 		time_t ts = 0;
@@ -730,6 +731,7 @@ class ProtoHybrid : public Module
 		ModeManager::AddChannelMode(new ChannelMode("REGMODERATED", 'M'));
 		ModeManager::AddChannelMode(new ChannelMode("NONICK", 'N'));
 		ModeManager::AddChannelMode(new ChannelModeOperOnly("OPERONLY", 'O'));
+		ModeManager::AddChannelMode(new ChannelMode("NOKICK", 'Q'));
 		ModeManager::AddChannelMode(new ChannelMode("REGISTEREDONLY", 'R'));
 		ModeManager::AddChannelMode(new ChannelMode("SSL", 'S'));
 		ModeManager::AddChannelMode(new ChannelMode("NONOTICE", 'T'));
