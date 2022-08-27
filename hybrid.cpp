@@ -687,7 +687,7 @@ class ProtoHybrid : public Module
 	{
 		/* Add user modes */
 		ModeManager::AddUserMode(new UserModeOperOnly("ADMIN", 'a'));
-		ModeManager::AddUserMode(new UserModeOperOnly("CALLERID", 'g'));
+		ModeManager::AddUserMode(new UserMode("CALLERID", 'g'));
 		ModeManager::AddUserMode(new UserMode("INVIS", 'i'));
 		ModeManager::AddUserMode(new UserModeOperOnly("LOCOPS", 'l'));
 		ModeManager::AddUserMode(new UserModeOperOnly("OPER", 'o'));
