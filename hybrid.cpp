@@ -696,12 +696,14 @@ class ProtoHybrid : public Module
 		ModeManager::AddUserMode(new UserModeNoone("REGISTERED", 'r'));
 		ModeManager::AddUserMode(new UserModeOperOnly("SNOMASK", 's'));
 		ModeManager::AddUserMode(new UserMode("WALLOPS", 'w'));
+		ModeManager::AddUserMode(new UserMode("BOT", 'B'));
 		ModeManager::AddUserMode(new UserMode("DEAF", 'D'));
 		ModeManager::AddUserMode(new UserMode("SOFTCALLERID", 'G'));
 		ModeManager::AddUserMode(new UserModeOperOnly("HIDEOPER", 'H'));
 		ModeManager::AddUserMode(new UserMode("REGPRIV", 'R'));
 		ModeManager::AddUserMode(new UserModeNoone("SSL", 'S'));
 		ModeManager::AddUserMode(new UserModeNoone("WEBIRC", 'W'));
+		ModeManager::AddUserMode(new UserMode("SECUREONLY", 'Z'));
 
 		/* b/e/I */
 		ModeManager::AddChannelMode(new ChannelModeList("BAN", 'b'));
