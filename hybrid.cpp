@@ -282,6 +282,11 @@ class HybridProto : public IRCDProto
 		UplinkSocket::Message(Me) << "SVSHOST " << u->GetUID() << " " << u->timestamp << " " << u->host;
 	}
 
+	bool IsExtbanValid(const Anope::string &mask) anope_override
+	{
+		return mask.length() >= 4 && mask[0] == '$' && mask[2] == ':';
+	}
+
 	bool IsIdentValid(const Anope::string &ident) anope_override
 	{
 		if (ident.empty() || ident.length() > Config->GetBlock("networkinfo")->Get<unsigned>("userlen"))
