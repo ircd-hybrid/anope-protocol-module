@@ -398,6 +398,33 @@ struct IRCDMessageJoin : Message::Join
 	}
 };
 
+struct IRCDMessageMetadata : IRCDMessage
+{
+	IRCDMessageMetadata(Module *creator) : IRCDMessage(creator, "METADATA", 3) { SetFlag(IRCDMESSAGE_REQUIRE_SERVER); }
+
+	/*               0      1         2      3                                                                */
+	/* :0MC METADATA client 0MCAAAAAB certfp 4C62287BA6776A89CD4F8FF10A62FFB35E79319F51AF6C62C674984974FCCB1D */
+	void Run(MessageSource &source, const std::vector<Anope::string> &params) anope_override
+	{
+		if (params[0].equals_cs("client"))
+		{
+			User *u = User::Find(params[1]);
+			if (!u)
+			{
+				Log(LOG_DEBUG) << "METADATA for nonexistent user " << params[1];
+				return;
+			}
+
+			if (params[2].equals_cs("certfp"))
+			{
+				u->fingerprint = params[3];
+				FOREACH_MOD(OnFingerprint, (u));
+			}
+		}
+	}
+};
+
+
 struct IRCDMessageMLock : IRCDMessage
 {
 	IRCDMessageMLock(Module *creator) : IRCDMessage(creator, "MLOCK", 4) { SetFlag(IRCDMESSAGE_REQUIRE_SERVER); }
@@ -673,6 +700,7 @@ class ProtoHybrid : public Module
 	IRCDMessageCapab message_capab;
 	IRCDMessageEOB message_eob;
 	IRCDMessageJoin message_join;
+	IRCDMessageMetadata message_metadata;
 	IRCDMessageMLock message_mlock;
 	IRCDMessageNick message_nick;
 	IRCDMessagePass message_pass;
@@ -753,7 +781,7 @@ class ProtoHybrid : public Module
 		message_kill(this), message_mode(this), message_motd(this), message_notice(this), message_part(this),
 		message_ping(this), message_privmsg(this), message_quit(this), message_squit(this), message_stats(this),
 		message_time(this), message_topic(this), message_version(this), message_whois(this),
-		message_bmask(this), message_capab(this), message_eob(this), message_join(this), message_mlock(this),
+		message_bmask(this), message_capab(this), message_eob(this), message_join(this), message_metadata(this), message_mlock(this),
 		message_nick(this), message_pass(this), message_pong(this), message_server(this), message_sid(this),
 		message_sjoin(this), message_svsmode(this), message_tburst(this), message_tmode(this), message_uid(this),
 		message_certfp(this)
